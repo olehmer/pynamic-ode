@@ -2,13 +2,13 @@
 Pynamic ODE - an ODE integrator with dynamic time steps. Can be run as RK1 
 (faster) or RK4 (slower, but more accurate).
 """
-import numpy as np
-import matplotlib.pyplot as plt
 
-def dynamic_ode_solver(func, start_time, max_time, initial_guess, 
-                       param_to_monitor, max_param_delta,
-                       base_time_step, min_step_time, end_condition,
-                       use_rk4=True):
+import numpy as np
+
+def pynamic_ode(func, start_time, max_time, initial_val, 
+                param_to_monitor, max_param_delta,
+                base_time_step, min_step_time, end_condition,
+                use_rk4=True):
     """
     Solves a system of ordinary differential equations with dynamic time steps.
     The passed in function (func) should take two arguments, a time step value,
@@ -29,7 +29,7 @@ def dynamic_ode_solver(func, start_time, max_time, initial_guess,
     relax back to the base time step (base_time_step) specified by the input. 
     The parameter to monitor should be an integer in the y_vals array. For example,
     if the initial guess has values:
-        initial_guess = [position, velocity]
+        initial_val = [position, velocity]
     and you want to make sure the position never changes by more than 1% you'd
     set param_to_monitor=0 and max_param_delta=0.01. 
     Inputs:
@@ -38,7 +38,7 @@ def dynamic_ode_solver(func, start_time, max_time, initial_guess,
         start_time       - simulation start time [s]
         max_time         - maximum time to run simulation before returning an 
                            error [s]
-        initial_guess    - array with initial parameter values
+        initial_val    - array with initial parameter values
         param_to_monitor - index of which parameter to track
         max_param_delta  - fractional difference to tolerate in param_to_monitor. 
                            A value of 0.01 means changes must be less than 1%. 
@@ -65,7 +65,7 @@ def dynamic_ode_solver(func, start_time, max_time, initial_guess,
                          the result of end_condition.
     """
 
-    y_cur = np.array(initial_guess)
+    y_cur = np.array(initial_val)
 
     times = []
     y_vals = []
@@ -77,6 +77,10 @@ def dynamic_ode_solver(func, start_time, max_time, initial_guess,
 
     status = 0 #status of the solver
     not_failed = True #set to false if the solver fails
+
+    #add the first step to the array of y values
+    times.append(current_time)
+    y_vals.append(y_cur)
 
     while current_time < max_time and end_cond_val and not_failed:
         end_val = end_condition(current_time, y_cur)
@@ -125,7 +129,9 @@ def dynamic_ode_solver(func, start_time, max_time, initial_guess,
             monitor_new = y_new[param_to_monitor]
 
             #check the percent change in the monitor
-            if abs(monitor_new - monitor_cur)/monitor_new > max_param_delta:
+            denom_val = monitor_new if monitor_new != 0 else monitor_cur
+            if denom_val != 0 and \
+                    abs(monitor_new - monitor_cur)/denom_val > max_param_delta:
                 #the change was larger than allowed. Reduce the step size and
                 #try again
 
@@ -151,21 +157,3 @@ def dynamic_ode_solver(func, start_time, max_time, initial_guess,
                 y_cur = y_new
 
     return times, y_vals, status
-
-def pynamic_test():
-    """
-    Validate the ode integrator with this function. This function will plot the
-    function dy(t)/dt=-2y(t), which has the solution y(t)=3e^(-2t) for t>=0.
-    The test will plot the results of pynamic compared to the true solution.
-    """
-
-    sol_times = np.linspace(0, 3, 25)
-    sol_ys = 3*np.exp(-2*sol_times)
-
-    plt.plot(sol_times, sol_ys)
-
-    plt.savefig("test_results.png")
-
-    return 0
-
-pynamic_test()
