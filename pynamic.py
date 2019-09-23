@@ -70,6 +70,7 @@ def pynamic_ode(func, start_time, max_time, initial_val,
     """
 
     y_cur = np.array(initial_val)
+    y_old = np.zeros_like(y_cur)
 
     times = []
     y_vals = []
@@ -87,7 +88,8 @@ def pynamic_ode(func, start_time, max_time, initial_val,
     y_vals.append(y_cur)
 
     while current_time < max_time and end_cond_val and not_failed:
-        end_val = end_condition(current_time, y_cur, y_vals[-1])
+        end_val = end_condition(current_time, y_cur, y_old)
+        y_old = np.copy(y_cur)
         if  end_val != 0:
             end_cond_val = False #we hit the end condition
             status = abs(end_val) #success!
