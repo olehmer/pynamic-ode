@@ -17,11 +17,14 @@ def pynamic_ode(func, start_time, max_time, initial_val,
     The func provided should return the derivatives of each value considered.
     This routine will start at time start_time, and run until max_time is 
     reached, or the end condition is met. The end condition is set by the
-    end_condition paramter, which should be a function like func that takes
-    both the current time (NOT TIME STEP) and the system values like:
-        end_condition(current_time, y_vals)
-    and should return not 0 if the integration should terminate, or 0 if it 
-    should stop. 
+    end_condition paramter, which should be a function similar to func but that 
+    takes the current time (NOT TIME STEP), the current system values, and the
+    previous values of the system - like:
+        end_condition(current_time, y_vals, y_vals_old)
+    and should return 0 if the integration should continue, or not 0 if it 
+    should terminate (the value returned by end_condition will be returned to 
+    the caller so you can process why the integration ended). 
+
     This solver will attempt each time step and if the % change in the monitored 
     parameter is greater than the provided max_param_delta (as a fraction), then
     the time step will be reduced by half (repeatedly if necessary) until the
@@ -47,7 +50,8 @@ def pynamic_ode(func, start_time, max_time, initial_val,
         min_step_time    - the smallest time step to allow. If max_param_delta 
                            is exceeded at the smallest allowed time step an 
                            error status will be returned.
-        end_condition    - function that takes current time and values, returns 
+        end_condition    - function that takes current time and values and the 
+                           previous values. This function will return 
                            not 0 if the integration should end, 0 otherwise. The
                            value of end condition will be passed out of this 
                            function.
@@ -83,7 +87,7 @@ def pynamic_ode(func, start_time, max_time, initial_val,
     y_vals.append(y_cur)
 
     while current_time < max_time and end_cond_val and not_failed:
-        end_val = end_condition(current_time, y_cur)
+        end_val = end_condition(current_time, y_cur, y_vals[-1])
         if  end_val != 0:
             end_cond_val = False #we hit the end condition
             status = abs(end_val) #success!
